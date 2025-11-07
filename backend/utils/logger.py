@@ -13,7 +13,7 @@ except ImportError:
 # === Splunk Configuration ===
 SPLUNK_HEC_HOST = os.getenv("SPLUNK_HEC_HOST", "192.168.49.1")
 SPLUNK_HEC_PORT = int(os.getenv("SPLUNK_HEC_PORT", "8088"))
-SPLUNK_HEC_TOKEN = os.getenv("SPLUNK_HEC_TOKEN", "3e9bd471-4702-4b48-b35e-699d1f7f5883")
+SPLUNK_HEC_TOKEN = os.getenv("SPLUNK_HEC_TOKEN", "d8a28e5d-dd93-4395-99e4-eac7c8598a7c")
 
 # === Log file directory ===
 LOG_DIR = os.path.join(os.getcwd(), "logs")

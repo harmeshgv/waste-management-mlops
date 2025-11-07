@@ -1,5 +1,29 @@
 /.venv
 /venv
 /__pycache__
+__pycache__/
+
 /dataset
 *.ipynb
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+*.venv/
+env/
+.venv/
+
+# Logs
+logs/
+*.log
+
+# Model files
+*.pth
+*.h5
+
+# VSCode / IDE
+.vscode/
+.idea/
