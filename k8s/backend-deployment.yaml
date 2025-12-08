@@ -15,7 +15,7 @@ spec:
       containers:
         - name: waste-backend
           image: waste-backend:latest
-          imagePullPolicy: Never   # <- This tells K8s to use local image
+          imagePullPolicy: Never
 
           ports:
             - containerPort: 8001
@@ -25,7 +25,7 @@ spec:
             - name: SPLUNK_HEC_PORT
               value: "8088"
             - name: SPLUNK_HEC_TOKEN
-              value: "d81ae29d-1b40-43f8-9314-cf3136932ce2"
+              value: "283b3dbb-f82f-438e-8485-5c51f44abdf6"
 ---
 apiVersion: v1
 kind: Service

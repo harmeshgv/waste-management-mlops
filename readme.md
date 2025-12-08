@@ -148,10 +148,19 @@ You'll see real-time logs from your FastAPI backend (like prediction logs, reque
 
 This query extracts ML prediction details from logs and visualizes counts per class:
 
+### prediction class count
 ```spl
 index=* "Prediction successful:"
 | rex field=_raw "Prediction successful: (?<predicted_class>[A-Za-z_]+)"
 | stats count by predicted_class
+| sort - count
+```
+
+### How many error and info logs
+```spl
+index=*
+| rex field=_raw "^\S+\s+\S+,\d+\s+\|\s+(?<log_level>[A-Z]+)\s+\|"
+| stats count by log_level
 | sort - count
 ```
 
@@ -211,3 +220,4 @@ minikube stop
 
 
 
+kubectl rollout restart deployment waste-backend

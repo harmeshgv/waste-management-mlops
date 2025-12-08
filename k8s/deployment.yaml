@@ -15,7 +15,7 @@ spec:
       containers:
         - name: waste-backend
           image: waste-backend:latest
-          imagePullPolicy: Never   # <- This tells K8s to use local image
+          imagePullPolicy: Never   
 
           ports:
             - containerPort: 8001

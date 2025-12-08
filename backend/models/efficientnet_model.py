@@ -1,4 +1,5 @@
 import torch
+import time
 from torchvision import models, transforms
 from PIL import Image
 import warnings
@@ -68,7 +69,7 @@ class Model:
         if self.model is None:
             logger.error("Prediction failed — model not loaded.")
             return "Model not loaded"
-
+        start = time.time()
         try:
             tensor = self._preprocess(img)
             if tensor is None:
@@ -79,7 +80,8 @@ class Model:
                 _, predicted = torch.max(output, 1)
 
             predicted_class = self.classes.get(str(int(predicted)), "Unknown")
-            logger.info(f"Prediction successful: {predicted_class}")
+            inference_time = time.time() - start
+            logger.info(f"Prediction successful: {predicted_class}, inference: {inference_time}", extra={"prediction":predicted_class, "inference_time_ms":round(inference_time * 1000, 2)})
             return predicted_class
         except Exception as e:
             logger.error(f"Prediction failed: {e}")
