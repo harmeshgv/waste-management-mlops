@@ -1,29 +1,41 @@
-/.venv
-/venv
-/__pycache__
-__pycache__/
-
-/dataset
-*.ipynb
-
-# Python
+.venv/
+venv/
+env/
+ENV/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.env
-*.venv/
-env/
-.venv/
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
-# Logs
+# Local config
+.env
+.env.*
+
+# Logs and runtime artifacts
 logs/
 *.log
+app/
+*.sqlite
+*.sqlite3
 
-# Model files
-*.pth
+# Data and notebooks
+dataset/
+*.ipynb
+
+# Large model artifacts
 *.h5
 
-# VSCode / IDE
+# IDE / OS
 .vscode/
 .idea/
+.DS_Store
+Thumbs.db
+
+# Local tooling
+.codex

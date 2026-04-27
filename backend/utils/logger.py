@@ -1,7 +1,8 @@
 import logging
 import os
 from logging.handlers import RotatingFileHandler
-from pythonjsonlogger import jsonlogger
+
+from pythonjsonlogger.json import JsonFormatter
 
 try:
     from splunk_handler import SplunkHandler
@@ -13,7 +14,7 @@ except ImportError:
 
 SPLUNK_HEC_HOST = os.getenv("SPLUNK_HEC_HOST", "192.168.49.1")
 SPLUNK_HEC_PORT = int(os.getenv("SPLUNK_HEC_PORT", "8088"))
-SPLUNK_HEC_TOKEN = os.getenv("SPLUNK_HEC_TOKEN", "d8a28e5d-dd93-4395-99e4-eac7c8598a7c")
+SPLUNK_HEC_TOKEN = os.getenv("SPLUNK_HEC_TOKEN", "").strip()
 
 LOG_DIR = os.path.join(os.getcwd(), "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
@@ -23,7 +24,7 @@ logger.setLevel(logging.INFO)
 
 if not logger.hasHandlers():
 
-    json_formatter = jsonlogger.JsonFormatter(
+    json_formatter = JsonFormatter(
         "%(asctime)s %(levelname)s %(name)s %(module)s %(funcName)s %(message)s"
     )
 
@@ -41,7 +42,7 @@ if not logger.hasHandlers():
     file_handler.setFormatter(json_formatter)
     logger.addHandler(file_handler)
 
-    if SPLUNK_AVAILABLE:
+    if SPLUNK_AVAILABLE and SPLUNK_HEC_TOKEN:
         try:
             splunk_handler = SplunkHandler(
                 host=SPLUNK_HEC_HOST,
@@ -56,5 +57,7 @@ if not logger.hasHandlers():
             logger.info("Splunk logging enabled (HEC connected).")
         except Exception as e:
             logger.warning(f"Failed to initialize Splunk handler: {e}")
+    elif SPLUNK_AVAILABLE:
+        logger.info("Splunk token not configured - Splunk logs disabled.")
 
 logger.info("Logger initialized successfully.")

@@ -1,223 +1,178 @@
-# Waste Management ML + DevOps Pipeline
+# Waste Management MLOps
 
-[![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.68%2B-green)](https://fastapi.tiangolo.com)
-[![Docker](https://img.shields.io/badge/Docker-Enabled-blue)](https://docker.com)
-[![Kubernetes](https://img.shields.io/badge/Kubernetes-Minikube-orange)](https://minikube.sigs.k8s.io)
-[![Splunk](https://img.shields.io/badge/Monitoring-Splunk-yellow)](https://splunk.com)
+An end-to-end waste classification and task management project built with FastAPI, PyTorch, PostgreSQL, Docker, Kubernetes, and a lightweight frontend dashboard.
 
-## Overview
+The app can:
+- classify uploaded waste images with an EfficientNet-based model
+- store waste reports as pending cleanup tasks
+- prioritize and deduplicate tasks by severity and location
+- generate a simple route plan for collection
+- mark completed tasks from the dashboard
 
-This project integrates **Machine Learning (ML)** and **DevOps** to create an end-to-end automated system for waste classification and monitoring. It uses:
+## Tech Stack
 
-* **FastAPI** for backend API serving
-* **Docker & Kubernetes (Minikube)** for containerization and orchestration
-* **Splunk** for real-time centralized logging and monitoring
-* **CI/CD pipeline integration (DevOps)** to ensure smooth deployment and observability
+- Python
+- FastAPI
+- PyTorch
+- PostgreSQL
+- Docker and Docker Compose
+- Kubernetes manifests
+- Pytest
+- GitHub Actions
+- Optional Splunk logging
 
-## ML + DevOps Workflow
+## Project Structure
 
-1. **ML Model (PyTorch)** -> Predicts waste category from input images
-2. **FastAPI Backend** -> Serves the model via REST API
-3. **Docker + Minikube** -> Manages containerized deployments
-4. **Splunk** -> Collects and visualizes real-time logs
-5. **DevOps** -> Automates builds, logs, and monitoring
+```text
+waste-management-mlops/
+├── backend/
+│   ├── db/
+│   ├── models/
+│   ├── utils/
+│   ├── main.py
+│   └── requirements.txt
+├── model/
+│   ├── class_labels.json
+│   └── *.pth
+├── tests/
+├── .github/workflows/
+├── docker-compose.yml
+├── Dockerfile
+├── index.html
+├── k8s/
+├── requirements-dev.txt
+└── readme.md
+```
 
-## Run the Project Locally
+## Features
 
-### 1. Using Uvicorn (Development Mode)
+- Image classification endpoint for waste category prediction
+- Auto-persistence of predicted waste reports into the database
+- City and locality mapping for task coordinates
+- Severity-based task ordering
+- Greedy route generation for pending tasks
+- Single-page dashboard for all API endpoints
+- Automated tests for API behavior and route logic
+- GitHub Actions workflow for test execution
 
-Make sure you are in your virtual environment and inside the project directory.
+## API Endpoints
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/` | Serves the frontend dashboard |
+| `GET` | `/health` | Health check |
+| `POST` | `/predict` | Upload image and create a task |
+| `GET` | `/tasks?city=<city>` | List pending tasks for a city |
+| `GET` | `/route?city=<city>` | Generate an ordered route |
+| `POST` | `/complete?task_id=<id>` | Mark a task as completed |
+
+## Run Locally
+
+### Option 1: Python virtual environment
 
 ```bash
-(venv) user@host:~/Documents/waste-management-ml$ uvicorn backend.main:app --host 0.0.0.0 --port 8001 --reload
+python3 -m venv venv
+source venv/bin/activate
+pip install -r backend/requirements.txt
+export DATABASE_URL=postgresql://<user>:<password>@<host>:5432/<database_name>
+uvicorn backend.main:app --host 0.0.0.0 --port 8001 --reload
 ```
 
-This will start the FastAPI server on:
-**http://localhost:8001**
+Use this mode if you already have a PostgreSQL instance running and want to point the app at it manually.
 
-### 2. Using Docker
+Open:
 
-Build and run the containerized backend:
+- Dashboard: `http://localhost:8001`
+- API docs: `http://localhost:8001/docs`
+
+### Option 2: Docker Compose
 
 ```bash
-# Build Docker image
-docker build -t waste-backend:latest .
-
-# Run container (map internal port 8001 to host port 8001)
-docker run -d -p 8001:8001 waste-backend:latest
+docker compose up --build
 ```
 
-Access API at:
-**http://localhost:8001**
+Open:
 
-## 3. Setup Splunk for Centralized Logging
+- Dashboard: `http://localhost:8001`
 
-Clone the Splunk setup repository parallel to this project or anywhere you prefer:
+## Running Tests
+
+Install test dependencies:
 
 ```bash
-git clone https://github.com/harmeshgv/splunk-lab.git
-cd splunk-lab
-chmod +x splunk-setup.sh
-./splunk-setup.sh
+pip install -r requirements-dev.txt
 ```
 
-Wait for setup to complete (around 1-2 minutes).
-Then, open Splunk in your browser:
-**http://localhost:8000**
-
-**Login credentials:**
-```
-Username: admin
-Password: admin12345
-```
-
-### Configure Splunk HTTP Event Collector (HEC)
-
-1. In Splunk Web, go to **Settings -> Data Inputs -> HTTP Event Collector -> New Token**
-2. **Set Name:** `waste-ml-logs`
-3. **Select Index:** `main`
-4. **Copy the Generated Token** (e.g. `d81ae29d-1b40-43f8-9314-cf3136932ce2`)
-
-### Update Splunk Config in Backend Deployment (for Kubernetes)
-
-In `k8s/backend-deployment.yaml`, update:
-
-```yaml
-- name: SPLUNK_HEC_URL
-  value: "http://localhost:8088"
-- name: SPLUNK_HEC_TOKEN
-  value: "d81ae29d-1b40-43f8-9314-cf3136932ce2"
-```
-
-(Only replace the token value with yours.)
-
-## 4. Deploy on Minikube
-
-### Step 1: Start Minikube
+Run the suite:
 
 ```bash
-minikube start
+python3 -m pytest -q
 ```
 
-### Step 2: Verify Docker Image
+Current coverage includes:
+- health endpoint
+- predict endpoint
+- tasks endpoint
+- route endpoint
+- complete endpoint
+- distance, deduplicate, and route helper logic
 
-Make sure the image name in your YAML (`waste-backend:latest`) matches the one built locally.
-If needed, build it inside Minikube's Docker environment:
+## CI
 
-```bash
-eval $(minikube docker-env)
-docker build -t waste-backend:latest .
+GitHub Actions is configured in:
+
+```text
+.github/workflows/run_tests.yml
 ```
 
-### Step 3: Apply Deployment
+The workflow:
+- runs on pushes and pull requests
+- sets up Python 3.12
+- installs test dependencies
+- runs `pytest`
 
-```bash
-kubectl apply -f k8s/backend-deployment.yaml
-```
+## Docker Notes
 
-### Step 4: Check Pods & Services
+The backend container:
+- serves the FastAPI app on port `8001`
+- serves the frontend dashboard from the same origin
+- loads model files from the `model/` directory
 
-```bash
-kubectl get pods
-kubectl get svc
-```
+The Compose stack includes:
+- `db` for PostgreSQL
+- `backend` for the FastAPI application
 
-### Step 5: Access Minikube Dashboard
+## Kubernetes Notes
 
-```bash
-minikube dashboard
-```
+Kubernetes manifests are available under `k8s/`.
 
-This will open the Kubernetes dashboard in your default browser where you can monitor your deployments, pods, and services.
+Before using the Kubernetes deployment:
+- update the Splunk token placeholder in `k8s/backend-deployment.yaml`
+- ensure the backend image exists in the environment where your cluster can access it
 
-## 5. View Logs in Splunk Dashboard
+## Splunk Logging
 
-Once the backend starts sending logs to Splunk, open:
-**http://localhost:8000**
+Splunk logging is optional.
 
-Go to **Search & Reporting** and type:
+The app reads these environment variables if you want to enable it:
 
-```
-source=*
-```
+- `SPLUNK_HEC_HOST`
+- `SPLUNK_HEC_PORT`
+- `SPLUNK_HEC_TOKEN`
 
-You'll see real-time logs from your FastAPI backend (like prediction logs, request status, etc.).
+If `SPLUNK_HEC_TOKEN` is not set, Splunk logging stays disabled.
 
-### Example Log Query for ML Predictions
+## Notes Before Pushing to GitHub
 
-This query extracts ML prediction details from logs and visualizes counts per class:
+- local logs, virtual environments, cache folders, and generated test files are ignored
+- Docker build context is trimmed with `.dockerignore`
+- the Kubernetes Splunk token has been replaced with a placeholder
+- tests are ready to run in CI
 
-### prediction class count
-```spl
-index=* "Prediction successful:"
-| rex field=_raw "Prediction successful: (?<predicted_class>[A-Za-z_]+)"
-| stats count by predicted_class
-| sort - count
-```
+## Future Improvements
 
-### How many error and info logs
-```spl
-index=*
-| rex field=_raw "^\S+\s+\S+,\d+\s+\|\s+(?<log_level>[A-Z]+)\s+\|"
-| stats count by log_level
-| sort - count
-```
-
-This helps track which waste categories are most commonly predicted — directly linking **ML insights** with **DevOps observability**.
-
-## Integration Summary
-
-| Component                | Description            | Purpose                           |
-| ------------------------ | ---------------------- | --------------------------------- |
-| ML Model                 | EfficientNet / PyTorch | Classifies waste images           |
-| FastAPI                  | Backend API            | Serves prediction results         |
-| Docker                   | Containerization       | Portable environment setup        |
-| Kubernetes (Minikube)    | Orchestration          | Scales and manages containers     |
-| Splunk                   | Logging & Monitoring   | Tracks and visualizes ML logs     |
-| DevOps                   | CI/CD + Observability  | Automates deployment & monitoring |
-
-## Example Use Case
-
-* Upload image of waste via API -> Backend runs ML model -> Prediction logged in Splunk.
-* Splunk visualizes "Most Predicted Waste Types" dashboard in real-time.
-* DevOps ensures continuous deployment with versioned ML models.
-
-## Dashboard Access
-
-### Minikube Dashboard
-```bash
-minikube dashboard
-```
-Access the Kubernetes dashboard to monitor:
-- Pod status and resource usage
-- Service endpoints
-- Deployment history
-- Log streams from containers
-
-### Splunk Dashboard
-**http://localhost:8000**
-Access the Splunk dashboard to monitor:
-- Real-time application logs
-- ML prediction analytics
-- System performance metrics
-- Custom visualizations and reports
-
-## Cleanup (Optional)
-
-To remove Splunk setup:
-
-```bash
-cd splunk-lab
-./splunk-cleanup.sh
-```
-
-To stop Minikube:
-
-```bash
-minikube stop
-```
-
-
-
-kubectl rollout restart deployment waste-backend
+- add authentication for admin task actions
+- move secrets to environment files or Kubernetes secrets
+- improve route optimization beyond the current greedy strategy
+- add coverage reporting to CI
+- deploy with a production-ready container registry and cluster

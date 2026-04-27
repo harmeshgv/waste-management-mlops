@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Waste Management API Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #f3efe6;
+      --bg-accent: #e4f0e8;
+      --panel: rgba(255, 255, 255, 0.86);
+      --panel-strong: #ffffff;
+      --text: #183028;
+      --muted: #587267;
+      --line: rgba(24, 48, 40, 0.12);
+      --primary: #1d7a63;
+      --primary-dark: #155a49;
+      --warn: #e7a33b;
+      --danger: #d65c4f;
+      --ok: #2e8b57;
+      --shadow: 0 22px 44px rgba(25, 53, 44, 0.12);
+      --radius: 24px;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(103, 176, 138, 0.24), transparent 30%),
+        radial-gradient(circle at top right, rgba(244, 182, 82, 0.24), transparent 28%),
+        linear-gradient(180deg, var(--bg-accent), var(--bg));
+      min-height: 100vh;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 48px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, rgba(20, 88, 71, 0.96), rgba(38, 128, 103, 0.88));
+      color: #f7fff9;
+      border-radius: 32px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 760px;
+      color: rgba(247, 255, 249, 0.84);
+      font-size: 1rem;
+    }
+
+    .hero-meta {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.14);
+      color: #f7fff9;
+      font-size: 0.95rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 18px;
+    }
+
+    .card {
+      grid-column: span 12;
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .card-half {
+      grid-column: span 6;
+    }
+
+    .card-third {
+      grid-column: span 4;
+    }
+
+    .card h2 {
+      margin: 0 0 6px;
+      font-size: 1.2rem;
+    }
+
+    .card p.section-copy {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 0.96rem;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 12px;
+      align-items: end;
+    }
+
+    .field {
+      grid-column: span 4;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field-wide {
+      grid-column: span 6;
+    }
+
+    .field-full {
+      grid-column: span 12;
+    }
+
+    label {
+      font-size: 0.84rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    input,
+    select,
+    button {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      font-size: 0.98rem;
+    }
+
+    input,
+    select {
+      padding: 13px 14px;
+      background: rgba(255, 255, 255, 0.86);
+      color: var(--text);
+    }
+
+    input:focus,
+    select:focus {
+      outline: 2px solid rgba(29, 122, 99, 0.18);
+      border-color: rgba(29, 122, 99, 0.4);
+    }
+
+    button {
+      padding: 13px 16px;
+      background: var(--primary);
+      color: #ffffff;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.18s ease, background 0.18s ease;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    button.secondary {
+      background: #edf5f1;
+      color: var(--primary-dark);
+      border-color: rgba(29, 122, 99, 0.18);
+    }
+
+    button.secondary:hover {
+      background: #ddece4;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .action-row button {
+      width: auto;
+      min-width: 150px;
+    }
+
+    .status {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #f5f8f7;
+      border: 1px solid rgba(24, 48, 40, 0.08);
+      color: var(--text);
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+    }
+
+    .status.ok {
+      background: rgba(46, 139, 87, 0.1);
+      color: var(--ok);
+      border-color: rgba(46, 139, 87, 0.2);
+    }
+
+    .status.warn {
+      background: rgba(231, 163, 59, 0.12);
+      color: #9d6512;
+      border-color: rgba(231, 163, 59, 0.22);
+    }
+
+    .status.error {
+      background: rgba(214, 92, 79, 0.12);
+      color: #9b2f25;
+      border-color: rgba(214, 92, 79, 0.22);
+    }
+
+    .stat-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .mini-stat {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.74);
+      border: 1px solid rgba(24, 48, 40, 0.08);
+    }
+
+    .mini-stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .mini-stat strong {
+      font-size: 1.6rem;
+      letter-spacing: -0.04em;
+    }
+
+    .response {
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 18px;
+      background: #13211d;
+      color: #d9f8ec;
+      font-family: var(--mono);
+      font-size: 0.88rem;
+      line-height: 1.5;
+      overflow: auto;
+      min-height: 120px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .table-wrap {
+      margin-top: 16px;
+      overflow: auto;
+      border-radius: 18px;
+      border: 1px solid rgba(24, 48, 40, 0.08);
+      background: var(--panel-strong);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 780px;
+    }
+
+    th,
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(24, 48, 40, 0.08);
+      text-align: left;
+      font-size: 0.95rem;
+    }
+
+    th {
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: rgba(29, 122, 99, 0.06);
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      min-width: 82px;
+    }
+
+    .pill.low {
+      background: rgba(46, 139, 87, 0.12);
+      color: var(--ok);
+    }
+
+    .pill.mid {
+      background: rgba(231, 163, 59, 0.14);
+      color: #9d6512;
+    }
+
+    .pill.high {
+      background: rgba(214, 92, 79, 0.14);
+      color: #9b2f25;
+    }
+
+    .route-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .route-stop {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 14px;
+      align-items: center;
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.74);
+      border: 1px solid rgba(24, 48, 40, 0.08);
+    }
+
+    .stop-number {
+      width: 42px;
+      height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 800;
+    }
+
+    .stop-title {
+      font-weight: 700;
+    }
+
+    .stop-copy {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    .endpoint-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .endpoint {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.74);
+      border: 1px solid rgba(24, 48, 40, 0.08);
+      font-family: var(--mono);
+      font-size: 0.9rem;
+    }
+
+    .endpoint-method {
+      min-width: 58px;
+      text-align: center;
+      padding: 6px 8px;
+      border-radius: 999px;
+      font-weight: 700;
+      color: #fff;
+      background: var(--primary);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    @media (max-width: 920px) {
+      .card-half,
+      .card-third,
+      .field,
+      .field-wide {
+        grid-column: span 12;
+      }
+
+      .stat-strip {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        width: min(100% - 20px, 1180px);
+        padding-top: 20px;
+      }
+
+      .hero,
+      .card {
+        border-radius: 22px;
+      }
+
+      .stat-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .route-stop,
+      .endpoint {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <h1>Waste Management API Dashboard</h1>
+      <p>One frontend for every backend endpoint: check service health, upload waste images, inspect pending tasks, generate optimized routes, and complete tasks without leaving the page.</p>
+      <div class="hero-meta">
+        <div class="chip">Backend: <strong id="apiBaseLabel"></strong></div>
+        <div class="chip">Cities: Chennai, Bangalore, Mumbai</div>
+        <div class="chip">Model + Routing + Postgres</div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Control Center</h2>
+        <p class="section-copy">Shared inputs used across prediction, tasks, and route endpoints.</p>
+        <div class="row">
+          <div class="field">
+            <label for="city">City</label>
+            <select id="city"></select>
+          </div>
+          <div class="field">
+            <label for="locality">Locality</label>
+            <select id="locality"></select>
+          </div>
+          <div class="field field-wide">
+            <label for="file">Waste Image</label>
+            <input type="file" id="file" accept="image/*" />
+          </div>
+        </div>
+        <div class="action-row">
+          <button type="button" onclick="checkHealth()">Check Health</button>
+          <button type="button" class="secondary" onclick="loadTasks()">Load Tasks</button>
+          <button type="button" class="secondary" onclick="loadRoute()">Build Route</button>
+        </div>
+        <div class="stat-strip">
+          <div class="mini-stat">
+            <span>Pending Tasks</span>
+            <strong id="taskCount">0</strong>
+          </div>
+          <div class="mini-stat">
+            <span>Route Stops</span>
+            <strong id="routeCount">0</strong>
+          </div>
+          <div class="mini-stat">
+            <span>Selected City</span>
+            <strong id="selectedCityLabel">Chennai</strong>
+          </div>
+          <div class="mini-stat">
+            <span>Last Prediction</span>
+            <strong id="predictionLabel">None</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="card card-half">
+        <h2>GET /health</h2>
+        <p class="section-copy">Verify the backend is alive and responding.</p>
+        <button type="button" onclick="checkHealth()">Ping Service</button>
+        <div id="healthStatus" class="status">Health check has not been run yet.</div>
+        <pre id="healthResponse" class="response">No response yet.</pre>
+      </article>
+
+      <article class="card card-half">
+        <h2>POST /predict</h2>
+        <p class="section-copy">Upload an image with city and locality to create a new pending waste task.</p>
+        <button type="button" onclick="uploadPrediction()">Upload and Predict</button>
+        <div id="predictStatus" class="status">Choose a city, locality, and image to start.</div>
+        <pre id="predictResponse" class="response">No response yet.</pre>
+      </article>
+
+      <article class="card card-half">
+        <h2>GET /tasks</h2>
+        <p class="section-copy">View all pending tasks for the selected city.</p>
+        <button type="button" onclick="loadTasks()">Fetch Pending Tasks</button>
+        <div id="taskStatus" class="status">Tasks have not been loaded yet.</div>
+        <div class="table-wrap">
+          <table id="taskTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>City</th>
+                <th>Type</th>
+                <th>Severity</th>
+                <th>Latitude</th>
+                <th>Longitude</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <pre id="taskResponse" class="response">No response yet.</pre>
+      </article>
+
+      <article class="card card-half">
+        <h2>GET /route</h2>
+        <p class="section-copy">Generate the optimized collection order for the selected city.</p>
+        <button type="button" onclick="loadRoute()">Generate Route</button>
+        <div id="routeStatus" class="status">Route has not been generated yet.</div>
+        <div id="routeList" class="route-list">
+          <div class="muted">No route stops to display.</div>
+        </div>
+        <pre id="routeResponse" class="response">No response yet.</pre>
+      </article>
+
+      <article class="card card-half">
+        <h2>POST /complete</h2>
+        <p class="section-copy">Mark a task as completed either manually or from the tasks table.</p>
+        <div class="row">
+          <div class="field field-wide">
+            <label for="taskIdInput">Task ID</label>
+            <input type="number" id="taskIdInput" min="1" placeholder="Enter task ID" />
+          </div>
+          <div class="field">
+            <button type="button" onclick="completeFromInput()">Complete Task</button>
+          </div>
+        </div>
+        <div id="completeStatus" class="status">No completion action has been sent yet.</div>
+        <pre id="completeResponse" class="response">No response yet.</pre>
+      </article>
+
+      <article class="card card-half">
+        <h2>Endpoint Map</h2>
+        <p class="section-copy">Quick view of every API route currently supported by your backend.</p>
+        <div class="endpoint-list">
+          <div class="endpoint"><span class="endpoint-method">GET</span><span>/health</span></div>
+          <div class="endpoint"><span class="endpoint-method">POST</span><span>/predict</span></div>
+          <div class="endpoint"><span class="endpoint-method">GET</span><span>/tasks?city=&lt;city&gt;</span></div>
+          <div class="endpoint"><span class="endpoint-method">GET</span><span>/route?city=&lt;city&gt;</span></div>
+          <div class="endpoint"><span class="endpoint-method">POST</span><span>/complete?task_id=&lt;id&gt;</span></div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const BASE = window.location.origin && window.location.origin.startsWith("http")
+      ? window.location.origin
+      : "http://localhost:8001";
+
+    const LOCATION_MAP = {
+      Chennai: ["Perumbakkam", "Medavakkam", "Sholinganallur", "T Nagar", "Velachery", "Tambaram", "Adyar", "Anna Nagar"],
+      Bangalore: ["Whitefield", "Electronic City", "Indiranagar", "Koramangala", "BTM Layout", "Yelahanka", "Hebbal", "Marathahalli"],
+      Mumbai: ["Andheri", "Bandra", "Dadar", "Powai", "Borivali", "Vashi", "Colaba", "Kurla"]
+    };
+
+    const citySelect = document.getElementById("city");
+    const localitySelect = document.getElementById("locality");
+    const fileInput = document.getElementById("file");
+
+    document.getElementById("apiBaseLabel").textContent = BASE;
+
+    function prettyJson(data) {
+      return JSON.stringify(data, null, 2);
+    }
+
+    function setResponse(elementId, data) {
+      document.getElementById(elementId).textContent = typeof data === "string"
+        ? data
+        : prettyJson(data);
+    }
+
+    function setStatus(elementId, message, type) {
+      const el = document.getElementById(elementId);
+      el.textContent = message;
+      el.className = "status" + (type ? ` ${type}` : "");
+    }
+
+    function severityTone(severity) {
+      if (severity >= 3) return "high";
+      if (severity === 2) return "mid";
+      return "low";
+    }
+
+    function severityLabel(severity) {
+      if (severity >= 3) return `High (${severity})`;
+      if (severity === 2) return `Medium (${severity})`;
+      return `Low (${severity})`;
+    }
+
+    async function fetchJson(url, options = {}) {
+      const response = await fetch(url, options);
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : {};
+
+      if (!response.ok) {
+        const message = data.detail || `Request failed with status ${response.status}`;
+        throw new Error(message);
+      }
+
+      return data;
+    }
+
+    function populateCities() {
+      citySelect.innerHTML = "";
+
+      Object.keys(LOCATION_MAP).forEach((city) => {
+        const option = document.createElement("option");
+        option.value = city;
+        option.textContent = city;
+        citySelect.appendChild(option);
+      });
+
+      updateCityLabel();
+      populateLocalities();
+    }
+
+    function populateLocalities() {
+      const city = citySelect.value;
+      const localities = LOCATION_MAP[city] || [];
+
+      localitySelect.innerHTML = "";
+      localities.forEach((locality) => {
+        const option = document.createElement("option");
+        option.value = locality;
+        option.textContent = locality;
+        localitySelect.appendChild(option);
+      });
+    }
+
+    function updateCityLabel() {
+      document.getElementById("selectedCityLabel").textContent = citySelect.value || "-";
+    }
+
+    function renderTasks(tasks) {
+      const tbody = document.querySelector("#taskTable tbody");
+      tbody.innerHTML = "";
+
+      if (!tasks.length) {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td colspan="8" class="muted">No pending tasks found for the selected city.</td>
+        `;
+        tbody.appendChild(row);
+        return;
+      }
+
+      tasks.forEach((task) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${task.id}</td>
+          <td>${task.city}</td>
+          <td>${task.waste_type}</td>
+          <td><span class="pill ${severityTone(task.severity)}">${severityLabel(task.severity)}</span></td>
+          <td>${task.lat ?? "-"}</td>
+          <td>${task.lng ?? "-"}</td>
+          <td>${task.status}</td>
+          <td><button type="button" class="secondary" onclick="completeTask(${task.id})">Complete</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function renderRoute(stops) {
+      const routeList = document.getElementById("routeList");
+      routeList.innerHTML = "";
+
+      if (!stops.length) {
+        routeList.innerHTML = '<div class="muted">No route stops to display.</div>';
+        return;
+      }
+
+      stops.forEach((stop, index) => {
+        const item = document.createElement("div");
+        item.className = "route-stop";
+        item.innerHTML = `
+          <div class="stop-number">${index + 1}</div>
+          <div>
+            <div class="stop-title">${stop.waste_type}</div>
+            <div class="stop-copy">Task ID: ${stop.id} | Lat: ${stop.lat ?? "-"} | Lng: ${stop.lng ?? "-"}</div>
+          </div>
+          <div><span class="pill ${severityTone(stop.severity)}">${severityLabel(stop.severity)}</span></div>
+        `;
+        routeList.appendChild(item);
+      });
+    }
+
+    async function checkHealth() {
+      setStatus("healthStatus", "Checking backend health...", "warn");
+
+      try {
+        const data = await fetchJson(`${BASE}/health`);
+        setStatus("healthStatus", `Backend is healthy: ${data.status}`, "ok");
+        setResponse("healthResponse", data);
+      } catch (error) {
+        setStatus("healthStatus", `Health check failed: ${error.message}`, "error");
+        setResponse("healthResponse", String(error));
+      }
+    }
+
+    async function uploadPrediction() {
+      const file = fileInput.files[0];
+      const city = citySelect.value;
+      const locality = localitySelect.value;
+
+      if (!file) {
+        setStatus("predictStatus", "Select an image file before uploading.", "warn");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("city", city);
+      formData.append("locality", locality);
+
+      setStatus("predictStatus", "Uploading image and waiting for prediction...", "warn");
+
+      try {
+        const data = await fetchJson(`${BASE}/predict`, {
+          method: "POST",
+          body: formData
+        });
+
+        document.getElementById("predictionLabel").textContent = data.prediction || "Unknown";
+        setStatus("predictStatus", `Prediction saved: ${data.prediction} with severity ${data.severity}.`, "ok");
+        setResponse("predictResponse", data);
+        await loadTasks();
+        await loadRoute();
+      } catch (error) {
+        setStatus("predictStatus", `Prediction failed: ${error.message}`, "error");
+        setResponse("predictResponse", String(error));
+      }
+    }
+
+    async function loadTasks() {
+      const city = citySelect.value;
+      setStatus("taskStatus", `Loading pending tasks for ${city}...`, "warn");
+
+      try {
+        const data = await fetchJson(`${BASE}/tasks?city=${encodeURIComponent(city)}`);
+        const tasks = data.tasks || [];
+
+        document.getElementById("taskCount").textContent = String(data.count || 0);
+        renderTasks(tasks);
+        setStatus(
+          "taskStatus",
+          tasks.length ? `Loaded ${tasks.length} pending task(s) for ${city}.` : `No pending tasks found for ${city}.`,
+          tasks.length ? "ok" : "warn"
+        );
+        setResponse("taskResponse", data);
+      } catch (error) {
+        document.getElementById("taskCount").textContent = "0";
+        renderTasks([]);
+        setStatus("taskStatus", `Task fetch failed: ${error.message}`, "error");
+        setResponse("taskResponse", String(error));
+      }
+    }
+
+    async function loadRoute() {
+      const city = citySelect.value;
+      setStatus("routeStatus", `Generating route for ${city}...`, "warn");
+
+      try {
+        const data = await fetchJson(`${BASE}/route?city=${encodeURIComponent(city)}`);
+        const route = data.route || [];
+
+        document.getElementById("routeCount").textContent = String(route.length);
+        renderRoute(route);
+        setStatus(
+          "routeStatus",
+          route.length ? `Generated route with ${route.length} stop(s).` : `No route generated because there are no pending tasks for ${city}.`,
+          route.length ? "ok" : "warn"
+        );
+        setResponse("routeResponse", data);
+      } catch (error) {
+        document.getElementById("routeCount").textContent = "0";
+        renderRoute([]);
+        setStatus("routeStatus", `Route generation failed: ${error.message}`, "error");
+        setResponse("routeResponse", String(error));
+      }
+    }
+
+    async function completeTask(taskId) {
+      setStatus("completeStatus", `Completing task ${taskId}...`, "warn");
+
+      try {
+        const data = await fetchJson(`${BASE}/complete?task_id=${taskId}`, {
+          method: "POST"
+        });
+
+        document.getElementById("taskIdInput").value = taskId;
+        setStatus("completeStatus", `Task ${taskId} marked as completed.`, "ok");
+        setResponse("completeResponse", data);
+        await loadTasks();
+        await loadRoute();
+      } catch (error) {
+        setStatus("completeStatus", `Could not complete task ${taskId}: ${error.message}`, "error");
+        setResponse("completeResponse", String(error));
+      }
+    }
+
+    async function completeFromInput() {
+      const taskId = document.getElementById("taskIdInput").value;
+
+      if (!taskId) {
+        setStatus("completeStatus", "Enter a task ID before sending the completion request.", "warn");
+        return;
+      }
+
+      await completeTask(taskId);
+    }
+
+    citySelect.addEventListener("change", () => {
+      updateCityLabel();
+      populateLocalities();
+    });
+
+    populateCities();
+    checkHealth();
+    loadTasks();
+    loadRoute();
+  </script>
+</body>
+</html>

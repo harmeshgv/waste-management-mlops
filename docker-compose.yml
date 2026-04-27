@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:15
+    hostname: db
+    restart: always
+    environment:
+      POSTGRES_USER: waste_user
+      POSTGRES_PASSWORD: strongpassword
+      POSTGRES_DB: waste_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U waste_user -d waste_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - waste_net
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: waste-backend:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: postgresql://waste_user:strongpassword@db:5432/waste_db
+    networks:
+      - waste_net
+volumes:
+  postgres_data:
+
+networks:
+  waste_net:
+    driver: bridge

@@ -25,7 +25,7 @@ spec:
             - name: SPLUNK_HEC_PORT
               value: "8088"
             - name: SPLUNK_HEC_TOKEN
-              value: "283b3dbb-f82f-438e-8485-5c51f44abdf6"
+              value: "REPLACE_WITH_YOUR_SPLUNK_HEC_TOKEN"
 ---
 apiVersion: v1
 kind: Service
