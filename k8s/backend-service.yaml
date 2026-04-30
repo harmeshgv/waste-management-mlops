@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: waste-backend
+  namespace: waste-mlops
+  labels:
+    app.kubernetes.io/name: waste-backend
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: waste-mlops
+spec:
+  selector:
+    app.kubernetes.io/name: waste-backend
+    app.kubernetes.io/component: api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8001
+  type: ClusterIP

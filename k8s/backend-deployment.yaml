@@ -2,40 +2,72 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: waste-backend
+  namespace: waste-mlops
+  labels:
+    app.kubernetes.io/name: waste-backend
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: waste-mlops
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: waste-backend
+      app.kubernetes.io/name: waste-backend
+      app.kubernetes.io/component: api
   template:
     metadata:
       labels:
-        app: waste-backend
+        app.kubernetes.io/name: waste-backend
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: waste-mlops
     spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - until nc -z postgres 5432; do echo "waiting for postgres"; sleep 2; done
       containers:
         - name: waste-backend
-          image: waste-backend:latest
-          imagePullPolicy: Never
-
-          ports:
-            - containerPort: 8001
+          image: waste-backend:minikube
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - uvicorn backend.main:app --host "${UVICORN_HOST}" --port "${UVICORN_PORT}"
+          envFrom:
+            - configMapRef:
+                name: waste-backend-config
           env:
-            - name: SPLUNK_HEC_HOST
-              value: "192.168.49.1"
-            - name: SPLUNK_HEC_PORT
-              value: "8088"
-            - name: SPLUNK_HEC_TOKEN
-              value: "REPLACE_WITH_YOUR_SPLUNK_HEC_TOKEN"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: waste-backend-svc
-spec:
-  selector:
-    app: waste-backend
-  type: NodePort
-  ports:
-    - port: 8001
-      targetPort: 8001
-      nodePort: 30001
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: waste-backend-secret
+                  key: DATABASE_URL
+          ports:
+            - name: http
+              containerPort: 8001
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 250m
+              memory: 768Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi

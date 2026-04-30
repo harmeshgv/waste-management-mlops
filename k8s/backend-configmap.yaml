@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: waste-backend-config
+  namespace: waste-mlops
+  labels:
+    app.kubernetes.io/name: waste-backend
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: waste-mlops
+data:
+  UVICORN_HOST: "0.0.0.0"
+  UVICORN_PORT: "8001"

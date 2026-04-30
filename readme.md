@@ -146,9 +146,176 @@ The Compose stack includes:
 
 Kubernetes manifests are available under `k8s/`.
 
-Before using the Kubernetes deployment:
-- update the Splunk token placeholder in `k8s/backend-deployment.yaml`
-- ensure the backend image exists in the environment where your cluster can access it
+This repository now includes a Kubernetes-only Minikube setup with:
+- a dedicated `waste-mlops` namespace
+- in-cluster PostgreSQL with persistent storage
+- a FastAPI backend Deployment
+- a backend ClusterIP Service
+- an Ingress for browser access
+
+Manifest set:
+
+```text
+k8s/
+├── namespace.yaml
+├── postgres-secret.yaml
+├── postgres-configmap.yaml
+├── postgres-service.yaml
+├── postgres-statefulset.yaml
+├── backend-configmap.yaml
+├── backend-secret.yaml
+├── backend-deployment.yaml
+├── backend-service.yaml
+├── ingress.yaml
+├── fluent-bit-secret.yaml
+├── fluent-bit-configmap.yaml
+├── fluent-bit-rbac.yaml
+└── fluent-bit-daemonset.yaml
+```
+
+### Minikube Setup
+
+1. Start Minikube:
+
+```bash
+minikube start
+```
+
+2. Enable ingress:
+
+```bash
+minikube addons enable ingress
+```
+
+3. Build the backend image inside Minikube:
+
+```bash
+eval $(minikube docker-env)
+docker build -t waste-backend:minikube .
+```
+
+4. Apply the namespace first:
+
+```bash
+kubectl apply -f k8s/namespace.yaml
+```
+
+5. Before applying secret manifests, replace placeholder values in:
+
+```text
+k8s/postgres-secret.yaml
+k8s/backend-secret.yaml
+k8s/fluent-bit-secret.yaml
+```
+
+6. Apply the remaining manifests:
+
+```bash
+kubectl apply -f k8s/postgres-secret.yaml
+kubectl apply -f k8s/postgres-configmap.yaml
+kubectl apply -f k8s/postgres-service.yaml
+kubectl apply -f k8s/postgres-statefulset.yaml
+kubectl apply -f k8s/backend-configmap.yaml
+kubectl apply -f k8s/backend-secret.yaml
+kubectl apply -f k8s/backend-deployment.yaml
+kubectl apply -f k8s/backend-service.yaml
+kubectl apply -f k8s/ingress.yaml
+```
+
+Optional Splunk logging setup:
+
+```bash
+kubectl apply -f k8s/fluent-bit-secret.yaml
+kubectl apply -f k8s/fluent-bit-configmap.yaml
+kubectl apply -f k8s/fluent-bit-rbac.yaml
+kubectl apply -f k8s/fluent-bit-daemonset.yaml
+```
+
+7. Wait for resources:
+
+```bash
+kubectl get pods -n waste-mlops
+kubectl get pvc -n waste-mlops
+kubectl get ingress -n waste-mlops
+```
+
+8. Get the Minikube IP:
+
+```bash
+minikube ip
+```
+
+9. Add this to your `/etc/hosts` file:
+
+```text
+<MINIKUBE_IP> waste.local
+```
+
+10. Open the app:
+
+```text
+http://waste.local
+```
+
+### What Each Kubernetes Piece Does
+
+- `namespace.yaml`: keeps the whole app isolated under `waste-mlops`
+- `postgres-*`: runs PostgreSQL inside the cluster and stores task data persistently
+- `backend-*`: runs the FastAPI app and serves the frontend dashboard
+- `ingress.yaml`: exposes one clean browser URL for both frontend and API
+
+### Kubernetes Verification
+
+Health checks:
+
+```bash
+kubectl get all -n waste-mlops
+kubectl get pvc -n waste-mlops
+kubectl describe ingress waste-backend-ingress -n waste-mlops
+```
+
+Backend checks:
+
+```bash
+kubectl logs deployment/waste-backend -n waste-mlops
+curl http://waste.local/health
+```
+
+Splunk logging checks:
+
+```bash
+kubectl get pods -n waste-mlops -l app.kubernetes.io/name=fluent-bit
+kubectl logs -n waste-mlops -l app.kubernetes.io/name=fluent-bit
+```
+
+If Splunk is running on your host machine, Fluent Bit forwards logs to:
+
+```text
+http://host.minikube.internal:8088
+```
+
+In Splunk Web, search:
+
+```text
+index=main
+```
+
+Useful searches:
+
+```text
+index=main kubernetes
+index=main waste-backend
+index=main postgres
+```
+
+Persistence checks:
+
+```bash
+kubectl rollout restart deployment/waste-backend -n waste-mlops
+kubectl rollout restart statefulset/postgres -n waste-mlops
+```
+
+After restart, previously created tasks should still be present because PostgreSQL uses a PVC.
 
 ## Splunk Logging
 
@@ -166,7 +333,7 @@ If `SPLUNK_HEC_TOKEN` is not set, Splunk logging stays disabled.
 
 - local logs, virtual environments, cache folders, and generated test files are ignored
 - Docker build context is trimmed with `.dockerignore`
-- the Kubernetes Splunk token has been replaced with a placeholder
+- Kubernetes secret manifests contain placeholders and should be filled locally before deployment
 - tests are ready to run in CI
 
 ## Future Improvements

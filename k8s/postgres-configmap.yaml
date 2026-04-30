@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: waste-mlops
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: waste-mlops
+data:
+  POSTGRES_DB: waste_db
+  POSTGRES_USER: waste_user
